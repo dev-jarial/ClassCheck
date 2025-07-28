@@ -1,28 +1,33 @@
 from uuid import uuid4
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 
 
 class AccountManager(BaseUserManager):
-    def create_account(self, email, password=None, **extrac_fields):
+    def create_account(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("User must have an email!")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extrac_fields)
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save(self._db)
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_active", True)
-        return self.create_account(self, email, password, **extra_fields)
+        extra_fields.setdefault("first_name", "admin")
+        return self.create_account(email, password, **extra_fields)
 
 
 # Create your models here.
-class Account(AbstractBaseUser):
+class Account(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=255, null=False, blank=False)
